@@ -1,0 +1,8 @@
+.DS_Store
+*.log
+*.zip
+*.tar.gz
+*.bak
+*.swp
+vendor/
+node_modules/

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/course_reminder/db" VERSION="20250729" COMMENT="XMLDB file for Moodle local/course_reminder"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+
+    <!-- Email Templates -->
+    <TABLE NAME="local_course_reminder_tpls" COMMENT="Reusable email templates for course reminders.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" COMMENT="Primary key" />
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" COMMENT="Template name" />
+        <FIELD NAME="subject" TYPE="text" NOTNULL="false" COMMENT="Email subject line" />
+        <FIELD NAME="body" TYPE="text" NOTNULL="false" COMMENT="Email message body with placeholders" />
+        <FIELD NAME="format" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="1" COMMENT="Moodle text format (1=HTML, 0=PLAIN, 2=MARKDOWN)" />
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" />
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" />
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+      </KEYS>
+    </TABLE>
+
+    <!-- Course Configuration -->
+    <TABLE NAME="local_course_reminder_courses" COMMENT="Courses configured to send reminders.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" />
+        <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" COMMENT="1 = enabled, 0 = disabled" />
+        <FIELD NAME="templateid" TYPE="int" LENGTH="10" NOTNULL="false" COMMENT="FK to template" />
+        <FIELD NAME="use_custom_subject" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" COMMENT="Enable custom subject override" />
+        <FIELD NAME="use_custom_message" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" COMMENT="Enable custom message override" />
+        <FIELD NAME="customsubject" TYPE="text" NOTNULL="false" COMMENT="Optional course-specific subject" />
+        <FIELD NAME="custommessage" TYPE="text" NOTNULL="false" COMMENT="Optional course-specific message body" />
+        <FIELD NAME="messageformat" TYPE="int" LENGTH="4" NOTNULL="false" COMMENT="Text format override" />
+        <FIELD NAME="frequencydays" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="7" COMMENT="Reminder frequency in days" />
+        <FIELD NAME="nextrun" TYPE="int" LENGTH="10" NOTNULL="false" COMMENT="Unix timestamp for next auto send" />
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" />
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+        <KEY NAME="courseid_fk" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id" />
+      </KEYS>
+    </TABLE>
+
+    <!-- Log of Sent Reminders -->
+    <TABLE NAME="local_course_reminder_logs" COMMENT="Log of all sent reminders.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" />
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" />
+        <FIELD NAME="type" TYPE="char" LENGTH="10" NOTNULL="true" COMMENT="manual | auto | scheduled" />
+        <FIELD NAME="subject" TYPE="text" NOTNULL="false" />
+        <FIELD NAME="body" TYPE="text" NOTNULL="false" />
+        <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="sent" COMMENT="sent | failed" />
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" />
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+        <KEY NAME="courseid_fk" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id" />
+        <KEY NAME="userid_fk" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id" />
+      </KEYS>
+    </TABLE>
+
+    <!-- One-time Scheduled Reminders -->
+    <TABLE NAME="local_course_reminder_schedule" COMMENT="One-time scheduled reminder queue.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" />
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true" />
+        <FIELD NAME="templateid" TYPE="int" LENGTH="10" NOTNULL="false" />
+        <FIELD NAME="sendtime" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="Unix timestamp when it should be sent" />
+        <FIELD NAME="use_custom_subject" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" COMMENT="Enable custom subject override" />
+        <FIELD NAME="use_custom_message" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" COMMENT="Enable custom message override" />
+        <FIELD NAME="customsubject" TYPE="text" NOTNULL="false" />
+        <FIELD NAME="custommessage" TYPE="text" NOTNULL="false" />
+        <FIELD NAME="messageformat" TYPE="int" LENGTH="4" NOTNULL="false" />
+        <FIELD NAME="status" TYPE="char" LENGTH="10" NOTNULL="true" DEFAULT="pending" COMMENT="pending | sent" />
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" />
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" />
+        <KEY NAME="courseid_fk" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id" />
+      </KEYS>
+    </TABLE>
+
+    <!-- Failed reminder send attempts -->
+   <TABLE NAME="local_course_reminder_retry" COMMENT="Failed reminder send attempts">
+  <FIELDS>
+    <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+    <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+    <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+    <FIELD NAME="templateid" TYPE="int" LENGTH="10" NOTNULL="false"/>
+    <FIELD NAME="customsubject" TYPE="text" NOTNULL="false"/>
+    <FIELD NAME="custommessage" TYPE="text" NOTNULL="false"/>
+    <FIELD NAME="messageformat" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="1"/>
+    <FIELD NAME="retrycount" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="0"/>
+    <FIELD NAME="lastattempttime" TYPE="int" LENGTH="10" NOTNULL="false"/>
+    <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="pending"/>
+  </FIELDS>
+  <KEYS>
+    <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+  </KEYS>
+</TABLE>
+
+
+    <!-- Excluded users from course reminders -->
+    <TABLE NAME="local_course_reminder_excl" COMMENT="Excluded users from course reminders">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="scheduleid" TYPE="int" LENGTH="10" NOTNULL="false" COMMENT="FK to schedule table for one-time reminders, NULL for recurring"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="course_user_schedule_idx" UNIQUE="true" FIELDS="courseid, userid, scheduleid"/>
+      </INDEXES>
+    </TABLE>
+
+  </TABLES>
+</XMLDB>
