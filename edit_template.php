@@ -17,7 +17,7 @@
 /**
  * Edit email template
  *
- * @package    local_course_reminder
+ * @package    local_ccp_coursereminder
  * @copyright  2025 Adebare Showemimo <adebareshowemimo@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -35,21 +35,21 @@ $templateid = optional_param('id', 0, PARAM_INT);
 $template = null;
 
 if ($templateid) {
-    $template = $DB->get_record('local_course_reminder_tpls', ['id' => $templateid], '*', MUST_EXIST);
+    $template = $DB->get_record('local_ccp_crsremind_tpls', ['id' => $templateid], '*', MUST_EXIST);
 }
 
 // Set up page
-$PAGE->set_url(new moodle_url('/local/course_reminder/edit_template.php', ['id' => $templateid]));
+$PAGE->set_url(new moodle_url('/local/ccp_coursereminder/edit_template.php', ['id' => $templateid]));
 $PAGE->set_pagelayout('admin');
 $PAGE->set_context($context);
 $PAGE->set_title($templateid ? 'Edit Template' : 'Add New Template');
 $PAGE->set_heading($PAGE->title);
 
 // Create Form
-$mform = new local_course_reminder_template_form(null, ['record' => $template]);
+$mform = new local_ccp_coursereminder_template_form(null, ['record' => $template]);
 
 if ($mform->is_cancelled()) {
-    redirect(new moodle_url('/local/course_reminder/templates.php'));
+    redirect(new moodle_url('/local/ccp_coursereminder/templates.php'));
 } elseif ($data = $mform->get_data()) {
     $entry = new stdClass();
     $entry->name = $data->name;
@@ -60,44 +60,73 @@ if ($mform->is_cancelled()) {
 
     if ($templateid) {
         $entry->id = $templateid;
-        $DB->update_record('local_course_reminder_tpls', $entry);
+        $DB->update_record('local_ccp_crsremind_tpls', $entry);
     } else {
         $entry->timecreated = time();
-        $DB->insert_record('local_course_reminder_tpls', $entry);
+        $DB->insert_record('local_ccp_crsremind_tpls', $entry);
     }
 
-    redirect(new moodle_url('/local/course_reminder/templates.php'), 'Template saved', 2);
+    redirect(new moodle_url('/local/ccp_coursereminder/templates.php'), 'Template saved', 2);
 }
 
 // Render Form
 echo $OUTPUT->header();
 
-// Sidebar
+// Main container with sidebar
 echo html_writer::start_div('row');
 echo html_writer::start_div('col-md-3');
 require_once(__DIR__ . '/sidebar.php');
 echo html_writer::end_div();
 
+// Main content area - two-column layout
 echo html_writer::start_div('col-md-9');
+echo html_writer::start_div('row g-4');
+
+// Left column - Form
+echo html_writer::start_div('col-12 col-lg-8');
+echo html_writer::start_div('card mb-4');
+echo html_writer::start_div('card-body p-4');
 $mform->display();
+echo html_writer::end_div(); // card-body
+echo html_writer::end_div(); // card
+echo html_writer::end_div(); // col-lg-8
 
-// Display available placeholders for email templates
-echo html_writer::start_div('alert alert-info mt-3');
-echo html_writer::tag('h4', 'Available Placeholders');
-echo html_writer::tag('p', 'Use these placeholders in your template. They will be replaced with actual values when emails are sent:');
-echo html_writer::start_tag('ul');
-echo html_writer::tag('li', html_writer::tag('strong', '{firstname}') . ' - User\'s first name');
-echo html_writer::tag('li', html_writer::tag('strong', '{lastname}') . ' - User\'s last name');
-echo html_writer::tag('li', html_writer::tag('strong', '{fullname}') . ' - User\'s full name');
-echo html_writer::tag('li', html_writer::tag('strong', '{email}') . ' - User\'s email address');
-echo html_writer::tag('li', html_writer::tag('strong', '{coursename}') . ' - Course full name');
-echo html_writer::tag('li', html_writer::tag('strong', '{courseurl}') . ' - Link to the course');
-echo html_writer::tag('li', html_writer::tag('strong', '{sitelogo}') . ' - Site logo URL');
-echo html_writer::tag('li', html_writer::tag('strong', '{sitelogocompact}') . ' - Site compact logo URL');
+// Right column - Available Placeholders sidebar
+echo html_writer::start_div('col-12 col-lg-4');
+echo html_writer::start_div('card mb-4');
+echo html_writer::start_div('card-body p-4');
+
+echo html_writer::tag('h5', html_writer::tag('i', '', ['class' => 'bi bi-braces me-2']) . 'Available Placeholders', ['class' => 'mb-3']);
+echo html_writer::tag('p', 'Use these placeholders in your template. They will be replaced with actual values when emails are sent:', ['class' => 'text-muted small mb-3']);
+
+echo html_writer::start_tag('ul', ['class' => 'list-unstyled mb-0 small']);
+
+$placeholders = [
+    ['{firstname}', "User's first name"],
+    ['{lastname}', "User's last name"],
+    ['{fullname}', "User's full name"],
+    ['{email}', "User's email address"],
+    ['{coursename}', 'Course full name'],
+    ['{courseurl}', 'Link to the course'],
+    ['{sitelogo}', 'Site logo URL'],
+    ['{sitelogocompact}', 'Site compact logo URL'],
+];
+
+foreach ($placeholders as $index => $placeholder) {
+    $borderclass = ($index < count($placeholders) - 1) ? ' border-bottom' : '';
+    echo html_writer::start_tag('li', ['class' => 'd-flex justify-content-between py-2' . $borderclass]);
+    echo html_writer::tag('code', $placeholder[0], ['class' => 'text-primary']);
+    echo html_writer::tag('span', $placeholder[1], ['class' => 'text-muted']);
+    echo html_writer::end_tag('li');
+}
+
 echo html_writer::end_tag('ul');
-echo html_writer::end_div();
+echo html_writer::end_div(); // card-body
+echo html_writer::end_div(); // card
+echo html_writer::end_div(); // col-lg-4
 
-echo html_writer::end_div();
-echo html_writer::end_div();
+echo html_writer::end_div(); // row g-4
+echo html_writer::end_div(); // col-md-9
+echo html_writer::end_div(); // row
 
 echo $OUTPUT->footer();
